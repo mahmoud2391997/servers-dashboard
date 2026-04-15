@@ -104,7 +104,7 @@ let users: User[] = [
   {
     id: '1',
     email: 'admin@example.com',
-    password: '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj6ukx.LFvO6', // bcrypt hash of 'password123'
+    password: '$2b$12$CNAB9OGbMpCJUwvXeRm/6.I8tZROQg7XeAkWSnVP6cZmOqfyjc6cm', // bcrypt hash of 'password123'
   },
 ]
 
