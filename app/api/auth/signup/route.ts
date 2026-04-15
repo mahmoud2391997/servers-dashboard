@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createUser, getUserByEmail } from '@/lib/mock-data'
 import { createSession } from '@/lib/auth'
+import { hashPassword } from '@/lib/auth-utils'
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,8 +20,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email already in use' }, { status: 400 })
     }
 
-    const user = createUser(email, password)
-    await createSession(user.id, user.email)
+    const hashedPassword = await hashPassword(password)
+    const user = createUser(email, hashedPassword)
+    await createSession(user.id, user.email, 'email')
 
     return NextResponse.json({ success: true })
   } catch (error) {

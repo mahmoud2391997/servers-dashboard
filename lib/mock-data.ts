@@ -104,7 +104,7 @@ let users: User[] = [
   {
     id: '1',
     email: 'admin@example.com',
-    password: 'password123', // In production, this would be hashed
+    password: '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj6ukx.LFvO6', // bcrypt hash of 'password123'
   },
 ]
 
@@ -120,13 +120,13 @@ export function createUser(email: string, password: string): User {
   const newUser: User = {
     id: Math.random().toString(36).substr(2, 9),
     email,
-    password, // In production, hash this
+    password, // Will be hashed in the API route
   }
   users.push(newUser)
   return newUser
 }
 
-export function getUser(email: string, password: string): User | null {
-  const user = users.find((u) => u.email === email && u.password === password)
+export function getUser(email: string): User | null {
+  const user = users.find((u) => u.email === email)
   return user || null
 }

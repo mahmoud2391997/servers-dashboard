@@ -7,10 +7,12 @@ import { ServerTable } from '@/components/server-table'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { LogOut, RefreshCw } from 'lucide-react'
+import { LogOut, RefreshCw, User } from 'lucide-react'
+import { useAuthContext } from '@/components/auth-provider'
 
 export default function DashboardPage() {
   const router = useRouter()
+  const { user, logout, isAuthenticated, isLoading: authLoading } = useAuthContext()
   const [servers, setServers] = useState<Server[]>(mockServers)
   const [filteredServers, setFilteredServers] = useState<Server[]>(mockServers)
   const [searchTerm, setSearchTerm] = useState('')
@@ -21,22 +23,14 @@ export default function DashboardPage() {
 
   // Check authentication on mount
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const response = await fetch('/api/auth/session')
-        if (!response.ok) {
-          router.push('/login')
-        }
-      } catch (error) {
-        console.error('Auth check failed:', error)
+    if (!authLoading) {
+      if (!isAuthenticated) {
         router.push('/login')
-      } finally {
+      } else {
         setIsChecking(false)
       }
     }
-
-    checkAuth()
-  }, [router])
+  }, [authLoading, isAuthenticated, router])
 
   // Apply filters and sorting
   useEffect(() => {
@@ -74,7 +68,7 @@ export default function DashboardPage() {
   const handleLogout = async () => {
     setIsLoading(true)
     try {
-      await fetch('/api/auth/logout', { method: 'POST' })
+      await logout()
       router.push('/login')
     } catch (error) {
       console.error('Logout failed:', error)
@@ -102,16 +96,27 @@ export default function DashboardPage() {
             <h1 className="text-2xl font-bold text-foreground">Server Monitor</h1>
             <p className="text-sm text-muted-foreground">Real-time server status overview</p>
           </div>
-          <Button
-            onClick={handleLogout}
-            disabled={isLoading}
-            variant="outline"
-            size="sm"
-            className="gap-2"
-          >
-            <LogOut className="w-4 h-4" />
-            {isLoading ? 'Logging out...' : 'Logout'}
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push('/profile')}
+              className="gap-2 text-muted-foreground hover:text-foreground"
+            >
+              <User className="w-4 h-4" />
+              {user?.email}
+            </Button>
+            <Button
+              onClick={handleLogout}
+              disabled={isLoading}
+              variant="outline"
+              size="sm"
+              className="gap-2"
+            >
+              <LogOut className="w-4 h-4" />
+              {isLoading ? 'Logging out...' : 'Logout'}
+            </Button>
+          </div>
         </div>
       </header>
 

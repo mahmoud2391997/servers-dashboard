@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUser } from '@/lib/mock-data'
+import { verifyPassword } from '@/lib/auth-utils'
 
 const SESSION_COOKIE_NAME = 'session'
 const SESSION_DURATION = 7 * 24 * 60 * 60 * 1000 // 7 days
@@ -12,9 +13,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 })
     }
 
-    const user = getUser(email, password)
+    const user = getUser(email)
 
     if (!user) {
+      return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 })
+    }
+
+    const isValidPassword = await verifyPassword(password, user.password)
+    if (!isValidPassword) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 })
     }
 
@@ -22,6 +28,7 @@ export async function POST(request: NextRequest) {
     const session = {
       userId: user.id,
       email: user.email,
+      provider: 'email',
       expiresAt,
     }
 
