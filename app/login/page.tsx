@@ -1,6 +1,6 @@
 'use client'
 
-import { FormEvent, useState } from 'react'
+import { FormEvent, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -8,13 +8,21 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { SocialAuthButton } from '@/components/ui/social-auth-button'
 import { Separator } from '@/components/ui/separator'
+import { useAuthContext } from '@/components/auth-provider'
 
 export default function LoginPage() {
   const router = useRouter()
+  const { login, socialAuth, isAuthenticated, isLoading: authLoading } = useAuthContext()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      router.push('/dashboard')
+    }
+  }, [authLoading, isAuthenticated, router])
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -22,24 +30,10 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        setError(data.error || 'Login failed')
-        return
-      }
-
-      // Wait a moment for the cookie to be set, then redirect
-      await new Promise(resolve => setTimeout(resolve, 300))
+      await login(email, password)
       router.push('/dashboard')
     } catch (err) {
-      setError('An error occurred. Please try again.')
+      setError(err instanceof Error ? err.message : 'An error occurred. Please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -50,23 +44,10 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      const response = await fetch(`/api/auth/${provider}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        setError(data.error || `${provider} login failed`)
-        return
-      }
-
-      // Wait a moment for the cookie to be set, then redirect
-      await new Promise(resolve => setTimeout(resolve, 300))
+      await socialAuth(provider)
       router.push('/dashboard')
     } catch (err) {
-      setError(`An error occurred with ${provider} login. Please try again.`)
+      setError(err instanceof Error ? err.message : `An error occurred with ${provider} login. Please try again.`)
     } finally {
       setIsLoading(false)
     }
@@ -155,6 +136,12 @@ export default function LoginPage() {
 
             <div className="mt-4 text-center text-sm text-muted-foreground">
               Demo credentials: <strong>admin@example.com</strong> / <strong>password123</strong>
+            </div>
+            <div className="mt-3 text-center text-sm text-muted-foreground">
+              Don&apos;t have an account?{' '}
+              <Link href="/signup" className="text-accent hover:underline">
+                Sign up
+              </Link>
             </div>
           </CardContent>
         </Card>

@@ -43,7 +43,15 @@ export async function getSession(): Promise<Session | null> {
   }
 
   try {
-    const session = JSON.parse(sessionCookie.value) as Session
+    const rawValue = sessionCookie.value
+    let session: Session
+
+    try {
+      session = JSON.parse(rawValue) as Session
+    } catch {
+      // Some environments store cookie payload URL-encoded.
+      session = JSON.parse(decodeURIComponent(rawValue)) as Session
+    }
 
     if (session.expiresAt < Date.now()) {
       // Session expired

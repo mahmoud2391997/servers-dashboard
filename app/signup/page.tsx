@@ -1,6 +1,6 @@
 'use client'
 
-import { FormEvent, useState } from 'react'
+import { FormEvent, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -8,14 +8,22 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { SocialAuthButton } from '@/components/ui/social-auth-button'
 import { Separator } from '@/components/ui/separator'
+import { useAuthContext } from '@/components/auth-provider'
 
 export default function SignupPage() {
   const router = useRouter()
+  const { signup, socialAuth, isAuthenticated, isLoading: authLoading } = useAuthContext()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      router.push('/dashboard')
+    }
+  }, [authLoading, isAuthenticated, router])
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -34,24 +42,10 @@ export default function SignupPage() {
     setIsLoading(true)
 
     try {
-      const response = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        setError(data.error || 'Signup failed')
-        return
-      }
-
-      // Wait a moment for the cookie to be set, then redirect
-      await new Promise(resolve => setTimeout(resolve, 300))
+      await signup(email, password)
       router.push('/dashboard')
     } catch (err) {
-      setError('An error occurred. Please try again.')
+      setError(err instanceof Error ? err.message : 'An error occurred. Please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -62,23 +56,10 @@ export default function SignupPage() {
     setIsLoading(true)
 
     try {
-      const response = await fetch(`/api/auth/${provider}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        setError(data.error || `${provider} signup failed`)
-        return
-      }
-
-      // Wait a moment for the cookie to be set, then redirect
-      await new Promise(resolve => setTimeout(resolve, 300))
+      await socialAuth(provider)
       router.push('/dashboard')
     } catch (err) {
-      setError(`An error occurred with ${provider} signup. Please try again.`)
+      setError(err instanceof Error ? err.message : `An error occurred with ${provider} signup. Please try again.`)
     } finally {
       setIsLoading(false)
     }

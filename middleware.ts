@@ -3,12 +3,27 @@ import { NextRequest, NextResponse } from 'next/server'
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Get session from cookies
+  // Get and validate session from cookies.
   const sessionCookie = request.cookies.get('session')
-  const hasSession = !!sessionCookie?.value
+  let hasSession = false
+
+  if (sessionCookie?.value) {
+    try {
+      const rawValue = sessionCookie.value
+      const parsed = JSON.parse(rawValue)
+      hasSession = typeof parsed?.expiresAt === 'number' && parsed.expiresAt > Date.now()
+    } catch {
+      try {
+        const parsed = JSON.parse(decodeURIComponent(sessionCookie.value))
+        hasSession = typeof parsed?.expiresAt === 'number' && parsed.expiresAt > Date.now()
+      } catch {
+        hasSession = false
+      }
+    }
+  }
 
   // Protected routes that require authentication
-  const protectedRoutes = ['/dashboard', '/servers']
+  const protectedRoutes = ['/dashboard', '/servers', '/profile']
 
   // Public routes that should redirect if already logged in
   const publicRoutes = ['/login', '/signup']
